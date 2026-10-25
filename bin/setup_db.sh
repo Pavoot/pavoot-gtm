@@ -2,7 +2,7 @@
 # One-time (safe to re-run): load the GTM CRM schema into the RDS Postgres that the pavoot-ops stack
 # created, (re)create the gtm_agent login with a new random password, and store its connection string
 # in the Mac Keychain (pavoot-gtm-db) and Parameter Store (/pavoot-ops/gtm-db-url) for the bot.
-# Needs: AWS credentials for the Pavoot account (aws sso login), psql. Prints no password.
+# Needs: the pavoot-admin AWS profile (it signs you in if needed), psql. Prints no password.
 #
 # Test hooks (no AWS): GTM_SETUP_HOST + GTM_SETUP_ADMIN_PW skip the AWS lookups, GTM_SETUP_NO_STORE=1
 # skips Keychain/Parameter Store, GTM_SETUP_SSLMODE overrides sslmode (default require).
@@ -10,6 +10,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 REGION=${AWS_REGION:-us-west-2}
 STACK=${STACK:-pavoot-ops}
+export AWS_PROFILE=${AWS_PROFILE:-pavoot-admin}      # same profile as pavoot-ops/deploy.sh
 
 out() {
     aws cloudformation describe-stacks --region "$REGION" --stack-name "$STACK" \
@@ -19,6 +20,10 @@ out() {
 HOST=${GTM_SETUP_HOST:-}
 ADMIN_PW=${GTM_SETUP_ADMIN_PW:-}
 if [ -z "$HOST" ]; then
+    if ! aws sts get-caller-identity >/dev/null 2>&1; then
+        echo "Signing in to AWS ($AWS_PROFILE)..."
+        aws sso login
+    fi
     HOST=$(out GtmDbEndpoint)
     SECRET=$(out GtmDbAdminSecret)
     if [ -z "$HOST" ] || [ "$HOST" = "None" ]; then
