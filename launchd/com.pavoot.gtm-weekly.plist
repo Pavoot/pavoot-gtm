@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Weekly learning run, Monday 07:30 (runs at next wake if the Mac was asleep).
+     Install: cp launchd/com.pavoot.gtm-weekly.plist ~/Library/LaunchAgents/ &&
+              launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.pavoot.gtm-weekly.plist
+     Test now: launchctl kickstart gui/$(id -u)/com.pavoot.gtm-weekly -->
+<plist version="1.0">
+<dict>
+    <key>Label</key><string>com.pavoot.gtm-weekly</string>
+    <key>ProgramArguments</key>
+    <array><string>/Users/ana/Documents/CODEBASE/pavoot-gtm/bin/weekly.sh</string></array>
+    <key>StartCalendarInterval</key>
+    <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>7</integer><key>Minute</key><integer>30</integer></dict>
+    <key>EnvironmentVariables</key>
+    <dict><key>PATH</key><string>/Users/ana/.nvm/versions/node/v24.14.0/bin:/opt/homebrew/bin:/usr/bin:/bin</string></dict>
+    <key>StandardErrorPath</key><string>/tmp/pavoot-gtm-weekly.err</string>
+</dict>
+</plist>

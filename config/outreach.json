@@ -1,0 +1,7 @@
+{
+  "_comment": "Read by gtm/drafts.py. email_footer must have a real physical address before any email can be drafted (CAN-SPAM). marketplace_live: set true only when Ana confirms pavoot.events is live.",
+  "email_footer": "Pavoot · TODO physical address\nNot the right person, or rather not hear from us? Reply \"stop\" and we won't email you again.",
+  "marketplace_live": false,
+  "_open_tracking": "all = every email gets the tracking image; followups = not the first cold email (slightly better inbox placement); off",
+  "open_tracking": "all"
+}

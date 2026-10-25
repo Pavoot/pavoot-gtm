@@ -1,0 +1,3 @@
+# Never prospect these (customers, partners, competitors). One domain per line; # comments allowed.
+# Customers (disclosure rules: never named in outreach either)
+fondo.com
