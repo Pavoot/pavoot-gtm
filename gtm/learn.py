@@ -115,6 +115,19 @@ def stats(conn, week: date) -> dict:
                               sum(comments) comments, sum(profile_views) profile_views
                        from gtm.content_metrics where recorded_at >= %s - interval '28 days' group by 1""", (end,))
         content = [dict(r) for r in cur.fetchall()]
+        # What links did (UTM campaigns, from the Pavoot app, stored weekly by the learning runs), joined to the
+        # content post or outreach experiment that carried them. Same numbers for both agents.
+        cur.execute("""select r.utm_source, r.utm_campaign, r.utm_content,
+                              sum(r.event_page_views) event_page_views, sum(r.registrations) registrations,
+                              sum(r.marketplace_visits) marketplace_visits, sum(r.marketplace_signups) marketplace_signups,
+                              sum(r.pledges) pledges, sum(r.meetings) meetings,
+                              max(l.platform) platform, max(l.author) author, max(l.target) target
+                       from gtm.campaign_results r
+                       left join gtm.content_links l on l.campaign = r.utm_campaign
+                       where r.week >= %s - interval '28 days'
+                       group by 1, 2, 3 order by sum(coalesce(r.registrations, 0) + coalesce(r.marketplace_signups, 0)
+                                                     + coalesce(r.pledges, 0)) desc, 1, 2 limit 60""", (end,))
+        campaigns = [dict(r) for r in cur.fetchall()]
         cur.execute("""select kind, count(*) n from gtm.brand_signals where seen_at >= %s and seen_at < %s group by 1""",
                     (start, end))
         brand = {r["kind"]: r["n"] for r in cur.fetchall()}
@@ -128,7 +141,8 @@ def stats(conn, week: date) -> dict:
         cur.execute("select claim, evidence, n, status from gtm.learnings where status in ('active', 'leaning') order by id")
         previous = [dict(r) for r in cur.fetchall()]
     return {"week": str(week), "week_sends": week_sends, "week_replies": week_replies, "week_meetings": week_meetings,
-            "experiments": experiments, "breakdowns": breakdowns, "content": content, "brand": brand,
+            "experiments": experiments, "breakdowns": breakdowns, "content": content, "campaigns": campaigns,
+            "brand": brand,
             "examples": examples, "previous_learnings": previous, "weights": current_weights(conn)}
 
 

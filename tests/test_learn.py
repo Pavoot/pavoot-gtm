@@ -175,3 +175,19 @@ def test_import_stores_proposed_experiment_as_draft(conn, tmp_path, monkeypatch)
     assert len(names) == 1 and names[0].startswith("angle-2-")
     r = learn.import_learnings(conn, st, {"learnings": [], "next_experiment": {**NEXT, "variable": "colour"}}, [])
     assert r["next_experiment"] is None and "unknown variable" in r["experiment_rejected"]
+
+
+def test_stats_include_campaign_results_joined_to_content_links(conn):
+    with conn.cursor() as cur:
+        cur.execute("""insert into gtm.content_links (campaign, platform, author, utm_content, destination, target)
+                       values ('content-2026-10-20-show-up', 'linkedin', 'ana', 'ana-a',
+                               'https://pavoot.events/?utm_source=linkedin&utm_campaign=content-2026-10-20-show-up',
+                               'pavoot_events')""")
+        cur.execute("""insert into gtm.campaign_results (week, utm_source, utm_campaign, utm_content, marketplace_visits,
+                                                         marketplace_signups, pledges)
+                       values (%s, 'linkedin', 'content-2026-10-20-show-up', 'ana-a', 40, 3, 1),
+                              (%s - 63, 'linkedin', 'old-campaign', '', 10, 1, 0)""", (WEEK, WEEK))
+    st = learn.stats(conn, WEEK)
+    assert [c["utm_campaign"] for c in st["campaigns"]] == ["content-2026-10-20-show-up"]   # older than 4 weeks: out
+    row = st["campaigns"][0]
+    assert row["platform"] == "linkedin" and row["author"] == "ana" and row["marketplace_signups"] == 3 and row["pledges"] == 1

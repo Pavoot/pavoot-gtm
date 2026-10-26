@@ -27,7 +27,7 @@ def pg():
     try:
         with psycopg.connect(admin, autocommit=True) as c:
             c.execute("create table public.app_secret (x int); create role anon; create role authenticated")
-            for f in ("001_gtm_schema.sql", "002_gtm_role.sql", "003_gtm_outreach.sql"):
+            for f in ("001_gtm_schema.sql", "002_gtm_role.sql", "003_gtm_outreach.sql", "004_content_links.sql"):
                 c.execute(open(os.path.join(ROOT, "db", f)).read())
         yield {"admin": admin, "agent": f"host={d} port={PORT} user=gtm_agent dbname=postgres"}
     finally:

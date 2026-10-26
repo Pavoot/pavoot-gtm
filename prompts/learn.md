@@ -10,6 +10,10 @@ Read `{{RUN}}/stats.json`:
 - `breakdowns`: conversion by signal, role, company size, city, sender, first channel.
 - `examples`: our own first messages from the last 4 weeks, marked positive or not (never prospect mail).
 - `content`, `brand`: post metrics and brand signals; `previous_learnings`: last week's list.
+- `campaigns`: what tagged links did over the last 4 weeks (from the Pavoot app, by UTM): event-page views and
+  registrations, pavoot.events visits, sign-ups and pledges, meetings. Rows with `platform`/`author` came from the
+  content agent's posts; rows whose `utm_campaign` matches an experiment came from outreach. Use them for learnings
+  about which experiment variants or channels bring people who act (register, pledge, book), not only reply.
 
 ## Rules
 - Every learning must be backed by numbers in stats.json. `evidence` quotes those numbers
