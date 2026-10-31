@@ -36,17 +36,27 @@ fi
 PORT=${GTM_SETUP_PORT:-5432}
 SSLMODE=${GTM_SETUP_SSLMODE:-require}
 AGENT_PW=$(openssl rand -hex 24)
+MIGRATE_ONLY=${GTM_MIGRATE_ONLY:-0}
 
 export PGPASSWORD="$ADMIN_PW" PGSSLMODE="$SSLMODE"
 P=(psql -h "$HOST" -p "$PORT" -U gtm_admin -d gtm -v ON_ERROR_STOP=1 -q)
-echo "Loading the schema into $HOST ..."
-"${P[@]}" -f db/001_gtm_schema.sql 2>&1 | grep -v NOTICE || true
-sed "s/CHANGE_ME/$AGENT_PW/" db/002_gtm_role.sql | "${P[@]}" 2>&1 | grep -v NOTICE || true
-"${P[@]}" -c "alter role gtm_agent with password '$AGENT_PW'"      # also when the login already existed
-"${P[@]}" -f db/003_gtm_outreach.sql 2>&1 | grep -v NOTICE || true
+echo "Loading the schema into $HOST ..."   # (bin/migrate.sh: same, without touching the login)
+for f in db/[0-9][0-9][0-9]_*.sql; do       # every numbered file, in order (all idempotent)
+    if [ "$(basename "$f")" = "002_gtm_role.sql" ]; then
+        [ "$MIGRATE_ONLY" = "1" ] && continue
+        sed "s/CHANGE_ME/$AGENT_PW/" "$f" | "${P[@]}" 2>&1 | grep -v NOTICE || true
+        "${P[@]}" -c "alter role gtm_agent with password '$AGENT_PW'"   # also when the login already existed
+    else
+        "${P[@]}" -f "$f" 2>&1 | grep -v NOTICE || true
+    fi
+done
 "${P[@]}" -At -c "select count(*) from pg_tables where schemaname = 'gtm'" | grep -qE '^1[0-9]$' \
     || { echo "The gtm tables are missing after loading; see the errors above."; exit 1; }
 unset PGPASSWORD
+if [ "$MIGRATE_ONLY" = "1" ]; then
+    echo "Done: database up to date (login and stored connection unchanged)."
+    exit 0
+fi
 
 URL="postgresql://gtm_agent:${AGENT_PW}@${HOST}:${PORT}/gtm?sslmode=${SSLMODE}"
 if [ "${GTM_SETUP_NO_STORE:-}" = "1" ]; then
